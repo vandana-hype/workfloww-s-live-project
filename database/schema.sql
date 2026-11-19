@@ -1,16 +1,15 @@
--- Fetch tasks for a company
-SELECT *
-FROM public.tasks
-WHERE company_id = 'YOUR_COMPANY_UUID';
+-- Tasks for a company
+select * from tasks where company_id = :company_id order by created_at desc;
 
--- Count completed tasks
-SELECT COUNT(*) AS completed_count
-FROM public.tasks
-WHERE company_id = 'YOUR_COMPANY_UUID'
-AND status = 'completed';
+-- Completed vs pending counts
+select
+  count(*) filter (where status = 'completed') as completed,
+  count(*) filter (where status <> 'completed') as pending
+from tasks where company_id = :company_id;
 
--- Count pending tasks
-SELECT COUNT(*) AS pending_count
-FROM public.tasks
-WHERE company_id = 'YOUR_COMPANY_UUID'
-AND status = 'pending';
+-- Per-company summary
+select c.name,
+  count(*) filter (where t.status = 'completed') as completed,
+  count(*) filter (where t.status <> 'completed') as pending
+from companies c left join tasks t on t.company_id = c.id
+group by c.name;

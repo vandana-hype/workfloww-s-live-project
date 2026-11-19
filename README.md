@@ -1,50 +1,27 @@
+# Multi-Tenant Task Management API
 
-# Workfloww-S-Live-Project
+## Setup
+Backend:  cd backend && python -m venv venv && venv\Scripts\activate
+          pip install -r requirements.txt
+          copy .env.example .env  (set SUPABASE_URL, SUPABASE_KEY, JWT_SECRET)
+          uvicorn backend.app.main:app --reload
+Database: run database/schema.sql, then database/rls.sql in the Supabase SQL editor
+Tests:    pytest  |  cd frontend && npx vitest run
 
-## About the Project
+## Endpoints
+POST /tasks (201, manager only) | GET /tasks (200) | PATCH /tasks/{id} (200/404/403/422)
 
-This repository contains the implementation of the Workfloww.ai Live Project. The project is being developed as part of the Workfloww.ai live project assignment.
+## Security: how cross-company access is prevented
+1. Tenant identity comes from the verified JWT, never from the request. company_id
+   is not accepted in body or query params, so changing parameters has no effect.
+2. Row Level Security is enforced in PostgreSQL on all tables, using
+   current_company_id() derived from auth.uid(). Even if the API layer has a bug,
+   or someone calls the database directly, other companies' rows are invisible.
+3. INSERT/UPDATE use WITH CHECK, so a user cannot create or move a task into
+   another company, or assign a task to a user from another company.
+4. A trigger restricts employees to updating task status only.
+5. The service role key is never exposed to clients.
 
-## Technology Stack
-
-- **Frontend:** TypeScript
-- **Backend:** Python
-- **Database:** Supabase (PostgreSQL)
-- **Code Editor:** Visual Studio Code
-- **Version Control:** Git and GitHub
-
-## Project Structure
-
-```text
-workflow_ai/
-├── frontend/
-├── backend/
-├── .gitignore
-└── README.md
-```
-
-## Features
-
-Project features and functionalities will be updated according to the given requirements.
-
-## Setup and Installation
-
-Setup instructions and dependencies will be added after finalizing the project structure.
-
-## Database
-
-Supabase is used as the database platform for storing and managing application data.
-
-## Development Status
-
-Currently setting up the development environment and project structure.
-
-## Author
-
-Vandana
-
-GitHub: https://github.com/vandana-hype
-
----
-
-*This README will be updated as the project develops.*
+## Assumptions
+Roles: manager/employee. Statuses: pending, in_progress, completed.
+One company per user. Auth handled by Supabase Auth.
